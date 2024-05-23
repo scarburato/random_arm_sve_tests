@@ -1,0 +1,6 @@
+cmake-build-*
+a.out
+*.o
+test_log
+test_exp
+test_tanh
