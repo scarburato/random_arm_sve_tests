@@ -68,10 +68,12 @@ Benchmark::Result Benchmark::run_single(bench_fun fun, float *data, float *outpu
             err_sum += std::abs(cmp[i] - output[i]);
             ++err_card;
         }
-
-        //if(std::abs(data[i] - output[i]) > 1e-3)
+        else if (cmp[i] != output[i])
+            res.error_ratio += 1;
     }
+
     res.mean_error = err_sum / err_card;
+    res.error_ratio /= double(len);
 
     double sum = std::accumulate(times.begin(), times.end(), 0.0);
     res.mean = sum / times.size();
@@ -80,4 +82,17 @@ Benchmark::Result Benchmark::run_single(bench_fun fun, float *data, float *outpu
     res.std_dev = std::sqrt(sq_sum / times.size() - res.mean * res.mean);
 
     return res;
+}
+void Benchmark::test_single(const float x, std::ostream &teletype) const
+{
+    float r = x;
+    lib_f(&r, 1);
+    teletype << std::format("{:<30} {:12.8f}", "lib", r) << '\n';
+
+    for (const auto &[name, fun] : fs_to_test)
+    {
+        float r = x;
+        fun(&r, 1);
+        teletype << std::format("{:<30} {:12.8f}", name, r) << std::endl;
+    }
 }

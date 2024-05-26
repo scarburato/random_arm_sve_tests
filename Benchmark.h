@@ -13,7 +13,7 @@ struct Benchmark
     std::vector<std::pair<std::string, bench_fun>> fs_to_test;
 
     void run(std::ostream &teletype = std::cout) const;
-
+    void test_single(const float x, std::ostream &teletype = std::cout) const;
 private:
     struct Result
     {

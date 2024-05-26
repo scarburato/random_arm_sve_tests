@@ -39,7 +39,7 @@ void fasttanh_vec(float *values, size_t len)
     {
         svbool_t pg = svwhilelt_b32(i, len);
         svfloat32_t v = svld1(pg, values + i);
-        v = svscale_x(pg, v, 1.0f); // 2x
+        v = svscale_x(pg, v, 1); // 2x
 
 #ifdef ENABLE_ONE_APROX // @FIXME @TODO
         // exp(p) = 0 if p <= 1e-16
@@ -47,8 +47,8 @@ void fasttanh_vec(float *values, size_t len)
         //svbool_t zero_mask = svcmpgt(pg, v, 16.0f);
         //pg = svnot_z(pg, zero_mask); // i.e. p st p > 1e-16
         svbool_t pg_tot = pg;
-        svbool_t pg_above_min = svcmple(pg, v, 16.0f);
-        svbool_t pg_below_max = svcmpge(pg, v, -16.0f);
+        svbool_t pg_above_min = svcmple(pg, v, 10.0f);
+        svbool_t pg_below_max = svcmpge(pg, v, -10.0f);
 
         pg = svand_z(pg, pg_above_min, pg_below_max);
 #endif
@@ -118,7 +118,7 @@ void fast_tanh_manvec(float *data, size_t len)
     fasttanh_vec(data, len);
 }
 
-int main()
+int main(int argc, char **argv)
 {
     // INIT LUT
     for (int i = 0; i < ENTRIES; ++i)
@@ -137,7 +137,14 @@ int main()
         }
     };
 
-    benchmark.run();
+    if(argc > 1 and std::string("interactive") == argv[1])
+    {
+        float input;
+        while(std::cin >> input)
+            benchmark.test_single(input);
+    }
+    else
+        benchmark.run();
 
     return 0;
 }

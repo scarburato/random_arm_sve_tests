@@ -1,5 +1,8 @@
 CFLAGS = -march=armv8-a+sve -g -std=c++20 -fno-exceptions -O3 -Ofast
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
 
+.PRECIOUS: %.o
 .SUFFIXES:
 .PHONY: all
 

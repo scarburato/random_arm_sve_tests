@@ -66,7 +66,6 @@ void fast_log_vec(float *values, size_t len, float factor)
 float log2_mantissa_table[ENTRIES] = {0};
 
 const uint32_t MASK_EXPONENT = 0b01111111100000000000000000000000;
-
 const uint32_t MASK_MANTISSA = 0b00000000011111111111111111111111;
 
 inline float log2_bis(float x)
@@ -82,15 +81,26 @@ inline float log2_bis(float x)
 void log2_bis(float *values, size_t len, float factor)
 {
     // Cast
-    int32_t *values_c = (int32_t *) values;
-
+    uint32_t *values_c = (uint32_t *) values;
 
     for (size_t i = 0; i < len; i += svcntw())
     {
         svbool_t pg = svwhilelt_b32(i, len);
-        svint32_t vsrc = svld1(pg, values_c + i);
+        svuint32_t v = svld1(pg, values_c + i);
 
-        // @TODO
+        svuint32_t exponent_v = svand_x(pg, v, MASK_EXPONENT);
+        exponent_v = svlsr_x(pg, exponent_v, 23);
+        svint32_t log_int_v = svsub_x(pg, svreinterpret_s32(exponent_v), 127);
+
+        svuint32_t mantissa_indices_v = svand_x(pg, v, MASK_MANTISSA);
+        mantissa_indices_v = svlsr_x(pg, mantissa_indices_v, 23-11);
+
+        svfloat32_t mantissa_v = svld1_gather_index(pg, log2_mantissa_table, mantissa_indices_v);
+        svfloat32_t expontent_float_v = svcvt_f32_x(pg, log_int_v);
+
+        svfloat32_t sum = svadd_x(pg, expontent_float_v, mantissa_v);
+        sum = svmul_x(pg, sum, factor);
+        svst1(pg, values + i, sum);
     }
 }
 
@@ -127,9 +137,12 @@ void log2_lut(float *data, size_t len)
         data[i] = log2_bis(data[i]) * 0.69314718f;
 }
 
-using namespace std::chrono_literals;
+void log2_lut_manvec(float *data, size_t len)
+{
+    log2_bis(data, len, 0.69314718f);
+}
 
-int main()
+__attribute__ ((constructor)) static void init_log2_LUT()
 {
     // INIT TABLE
     for (long i = 0; i < ENTRIES; ++i)
@@ -137,7 +150,13 @@ int main()
         float x = 1.0f + float(i) / ENTRIES;
         log2_mantissa_table[i] = log2f(x);
     }
+}
 
+
+using namespace std::chrono_literals;
+
+int main(int argc, char **argv)
+{
     Benchmark benchmark = {
         .len = LEN,
         .gen_data = create_data,
@@ -145,11 +164,19 @@ int main()
         .fs_to_test = {
             {"fast_log2 (auto)", fast_log2_autovec},
             {"fast_log2 (m. vec)", fast_log2_manvec},
-            {"log2 LUT (auto)", log2_lut}
+            {"log2 LUT (auto)", log2_lut},
+            {"log2 LUT (m. vec)", log2_lut_manvec}
         }
     };
 
-    benchmark.run();
+    if(argc > 1 and std::string("interactive") == argv[1])
+    {
+        float input;
+        while(std::cin >> input)
+            benchmark.test_single(input);
+    }
+    else
+        benchmark.run();
 
     return 0;
 }
