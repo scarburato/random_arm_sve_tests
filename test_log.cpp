@@ -120,7 +120,7 @@ void create_lib_data(float *data, size_t len)
         data[i] = logf(data[i]);
 }
 
-void fast_log2_autovec(float *data, size_t len)
+void fast_log2_autovec(float *__restrict__ data, size_t len)
 {
     for (size_t i = 0; i < len; ++i)
         data[i] = fast_log2(data[i]) * 0.69314718f;
@@ -131,7 +131,7 @@ void fast_log2_manvec(float *data, size_t len)
     fast_log_vec(data, len, 0.69314718f);
 }
 
-void log2_lut(float *data, size_t len)
+void log2_lut(float *__restrict__ data, size_t len)
 {
     for (size_t i = 0; i < len; ++i)
         data[i] = log2_bis(data[i]) * 0.69314718f;

@@ -25,12 +25,12 @@ void Benchmark::run(std::ostream &teletype) const
         results[name] = run_single(fun, base_data.get(), run_results.get(), base_results.get());
     }
 
-    teletype << std::format("{:<30} {:<12} {:<12} {:<12} {:<12}\n",
-                            "Name", "Mean [ms]", "Std Dev [ms]", "Error Ratio", "Mean Error");
+    teletype << std::format("{:<30},{:<17},{:<17},{:<17},{:<16}\n",
+                            "Name", "Mean [ms]", "stdev [ms]", "Error Ratio", "Mean Error");
 
     for (const auto &[name, result] : results)
     {
-        teletype << std::format("{:<30} {:12.5f} {:12.5f} {:12.5f} {:12.3e}\n",
+        teletype << std::format("{:<30},{:12.5f},{:12.5f},{:12.5f},{:12.3e}\n",
                                 name,
                                 result.mean,
                                 result.std_dev,

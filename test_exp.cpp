@@ -148,7 +148,7 @@ void create_lib_data(float *data, size_t len)
         data[i] = expf(data[i]);
 }
 
-void myexp_autovec(float *data, size_t len)
+void myexp_autovec(float *__restrict__ data, size_t len)
 {
     for (size_t i = 0; i < len; ++i)
         data[i] = myexp(data[i]);
